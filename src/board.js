@@ -1,6 +1,7 @@
 import React from 'react';
 import Square from './square.js'
 import EntityDetails from './entityDetails.js'
+import GameBoardLogic from './gameBoardLogic.js'
 
 class Board extends React.Component {
 constructor() {
@@ -24,7 +25,7 @@ constructor() {
       moveInfo: null,
       entityKilled: null,
       endOfGameInfo: null,
-
+    
       entities: {  
         1:{ id: 1, name: 'Player 1',  type: 'creature', image: 'wiz1.jpg', owner: 1, alive: true, ap: 100, attack: 5, defense: 4, resources: []}, 
         2:{ id: 2, name: 'Player 2', type: 'creature', image: 'wiz2.jpg', owner: 2, alive: true, ap: 100, attack: 3, defense: 6, resources: []},
@@ -76,15 +77,14 @@ isEntityResource(entityId) {
 }
 
 moveEntity(destinationSquareId) {
-  if (!this.isLegalMove(destinationSquareId)) {
+
+  if (!GameBoardLogic.isLegalMove(this.state.selectedSquareId, destinationSquareId)) {
     this.setState({ isMoving: 'Illegal Move!'});
     return;
   }
   
-  var newSquareContents = this.state.squareContent;
-
   var entityIdToMove =  this.state.squareContent[this.state.selectedSquareId];
-  var entityIdToAttack = newSquareContents[destinationSquareId]; 
+  var entityIdToAttack = this.state.squareContent[destinationSquareId]; 
   
   if (entityIdToAttack != null) {
     if (this.isEntityCreature(entityIdToAttack)) {
@@ -99,6 +99,7 @@ moveEntity(destinationSquareId) {
         this.killEntity(killedEntity)
         this.checkForWinner();
         
+        var newSquareContents = this.state.squareContent;
         newSquareContents[this.state.selectedSquareId] = null;  
         newSquareContents[destinationSquareId] = entityIdToMove;
         
@@ -110,10 +111,12 @@ moveEntity(destinationSquareId) {
           selectedSquareId: null});
       }
     }
+    
+    // check if resource, if yes then collect automatically
     if (this.isEntityResource(entityIdToAttack)) {
       this.addResourceToEntity(entityIdToMove, entityIdToAttack);
     
-      this.amendApForEntity(entityIdToMove, -50);
+      this.amendApForEntity(entityIdToMove, -25);
       
       newSquareContents[this.state.selectedSquareId] = null;  
       newSquareContents[destinationSquareId] = entityIdToMove;
@@ -129,6 +132,9 @@ moveEntity(destinationSquareId) {
   }
   else {
     // Empty square, so move
+    // check we have enough ap
+    var ap = this.getAPtoMove(this.state.selectedSquareId, destinationSquareId);
+
     newSquareContents[this.state.selectedSquareId] = null;  
     newSquareContents[destinationSquareId] = entityIdToMove;
   
@@ -139,10 +145,8 @@ moveEntity(destinationSquareId) {
       entityKilled: null,
       selectedSquareId: null});
       
-    this.amendApForEntity(entityIdToMove, -50);
-
+    this.amendApForEntity(entityIdToMove, 0 - ap);
   }
-  
   
 }
 
@@ -152,9 +156,9 @@ addResourceToEntity(creatureId, resourceId) {
   this.setState({ entities: newEntities });
 }
 
-isLegalMove(destinationSquareId) {
-  var xSelected = parseInt(this.state.selectedSquareId / 10);
-  var ySelected = this.state.selectedSquareId % 10;
+isLegalMove(sourceSquareId, destinationSquareId) {
+  var xSelected = parseInt(sourceSquareId / 10);
+  var ySelected = sourceSquareId % 10;
   var xDestination = parseInt(destinationSquareId / 10);
   var yDestination = destinationSquareId % 10;
 
@@ -211,8 +215,15 @@ handleClick(squareId) {
   }
 
   renderSquare(id) {
-    var content = this.state.squareContent[id] == null ? null : this.getEntityFromId(this.state.squareContent[id]).image;
-    return <Square id={id} content={content} onClick={() => this.handleClick(id)}  />;
+    var squareContent = this.state.squareContent[id];
+    if (squareContent == null)
+    {
+      return <Square id={id} content={null} onClick={() => {}} />;
+    } 
+
+    var entity = this.getEntityFromId(this.state.squareContent[id]);
+     
+    return <Square id={id} content={entity.image} textDetail={entity.id} onClick={() => this.handleClick(id)}  />;
   }
 
   renderEntityDetail(entity, owner) {
@@ -230,12 +241,12 @@ handleClick(squareId) {
     const killInfo = this.state.entityKilled == null ? null : 'Entity Killed: ' + this.getEntityFromId(this.state.entityKilled).name; 
 
     var entityIsOwned = false;
-    var entity = this.getEntityFromId(entityId);
+    var entitySelected = this.getEntityFromId(entityId);
     var owner = null;
 
-    if (entity != null) {
-      entityIsOwned = (this.state.playerTurn == entity.owner);
-      owner = this.getEntityFromId(entity.owner);
+    if (entitySelected != null) {
+      entityIsOwned = (this.state.playerTurn == entitySelected.owner);
+      owner = this.getEntityFromId(entitySelected.owner);
     }
     
     return (
@@ -327,7 +338,7 @@ handleClick(squareId) {
           {this.renderSquare(69)}
         </div>
 
-        {this.renderEntityDetail(entity, owner)}
+        {this.renderEntityDetail(entitySelected, owner)}
 
         <div className="status">{this.state.isMoving}</div>
         <div className="status">{this.state.moveInfo}</div>
