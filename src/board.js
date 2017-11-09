@@ -8,15 +8,15 @@ constructor() {
     super();
     this.state = {
       squareContent: Array.apply(null, { length: 70 }).map(function(value, index) { 
-        if (index == 0) 
+        if (index === 0) 
           return '1';
-        if (index == 69) 
+        if (index === 69) 
           return '2';
-        if (index == 8) 
+        if (index === 8) 
           return '3';
-        if (index == 1) 
+        if (index === 1) 
           return '4';
-        if (index == 68) 
+        if (index === 68) 
           return '5';
       }),
       playerTurn: 1,
@@ -51,7 +51,7 @@ _onMoveClick() {
   }
 
 _onNextTurnClick() {
-    var newPlayerTurn = this.state.playerTurn == 1 ? 2 : 1;
+    var newPlayerTurn = this.state.playerTurn === 1 ? 2 : 1;
     this.setState({ 
       playerTurn: newPlayerTurn,
       isMoving: null,
@@ -70,22 +70,40 @@ isEntityAlive(entityId) {
   return this.getEntityFromId(entityId).alive;
 }
 isEntityCreature(entityId) {
-  return this.getEntityFromId(entityId).type == 'creature';
+  return this.getEntityFromId(entityId).type === 'creature';
 }
 isEntityResource(entityId) {
-  return this.getEntityFromId(entityId).type == 'resource';
+  return this.getEntityFromId(entityId).type === 'resource';
+}
+
+isLegalMove(sourceSquare, destinationSquare) {
+  var xSelected = parseInt(sourceSquare / 10);
+  var ySelected = sourceSquare % 10;
+  var xDestination = parseInt(destinationSquare / 10);
+  var yDestination = destinationSquare % 10;
+
+  if ((xSelected === xDestination) && (ySelected === yDestination)) {
+  return false;
+  }
+
+  if (Math.abs(xSelected - xDestination) < 2 && Math.abs(ySelected - yDestination) < 2) {
+  return true;
+  }
+
+  return false;
 }
 
 moveEntity(destinationSquareId) {
 
-  if (!GameBoardLogic.isLegalMove(this.state.selectedSquareId, destinationSquareId)) {
+  if (!this.isLegalMove(this.state.selectedSquareId, destinationSquareId)) {
     this.setState({ isMoving: 'Illegal Move!'});
     return;
   }
   
   var entityIdToMove =  this.state.squareContent[this.state.selectedSquareId];
   var entityIdToAttack = this.state.squareContent[destinationSquareId]; 
-  
+  var newSquareContents = this.state.squareContent;
+
   if (entityIdToAttack != null) {
     if (this.isEntityCreature(entityIdToAttack)) {
       // Attack
@@ -99,7 +117,7 @@ moveEntity(destinationSquareId) {
         this.killEntity(killedEntity)
         this.checkForWinner();
         
-        var newSquareContents = this.state.squareContent;
+        
         newSquareContents[this.state.selectedSquareId] = null;  
         newSquareContents[destinationSquareId] = entityIdToMove;
         
@@ -162,7 +180,7 @@ isLegalMove(sourceSquareId, destinationSquareId) {
   var xDestination = parseInt(destinationSquareId / 10);
   var yDestination = destinationSquareId % 10;
 
-  if ((xSelected == xDestination) && (ySelected == yDestination)) {
+  if ((xSelected === xDestination) && (ySelected === yDestination)) {
     return false;
   }
 
@@ -215,14 +233,18 @@ handleClick(squareId) {
   }
 
   renderSquare(id) {
-    var squareContent = this.state.squareContent[id];
+/*     var squareContent = this.state.squareContent[id];
     if (squareContent == null)
     {
       return <Square id={id} content={null} onClick={() => {}} />;
     } 
-
+ */
     var entity = this.getEntityFromId(this.state.squareContent[id]);
      
+    if (entity == null)
+    {
+      return <Square id={id} content={null} textDetail={null} onClick={() => null}  />;      
+    }
     return <Square id={id} content={entity.image} textDetail={entity.id} onClick={() => this.handleClick(id)}  />;
   }
 
@@ -245,14 +267,14 @@ handleClick(squareId) {
     var owner = null;
 
     if (entitySelected != null) {
-      entityIsOwned = (this.state.playerTurn == entitySelected.owner);
+      entityIsOwned = (this.state.playerTurn === entitySelected.owner);
       owner = this.getEntityFromId(entitySelected.owner);
     }
     
     return (
       <div>
         <div className="status">{status} </div>                
-
+        <div className="game-board" >
         <div className="board-row">
           {this.renderSquare(0)}
           {this.renderSquare(1)}
@@ -337,7 +359,7 @@ handleClick(squareId) {
           {this.renderSquare(68)}
           {this.renderSquare(69)}
         </div>
-
+        </div>
         {this.renderEntityDetail(entitySelected, owner)}
 
         <div className="status">{this.state.isMoving}</div>
@@ -347,7 +369,7 @@ handleClick(squareId) {
 
         <div className="button">
           <button name="Cancel" disabled={entityId == null ? 'disabled' : null} onClick={this._onCancelClick}>Cancel</button>
-          <button name="Move" disabled={(entityId == null || !entityIsOwned || this.state.isMoving != null || entity.ap < 50) ? 'disabled' : null} onClick={this._onMoveClick}>Move</button>
+          <button name="Move" disabled={(entityId == null || !entityIsOwned || this.state.isMoving != null || entitySelected.ap < 50) ? 'disabled' : null} onClick={this._onMoveClick}>Move</button>
         </div>
         <button name="EndTurn" onClick={this._onNextTurnClick}>End Turn</button>
       </div>

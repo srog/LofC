@@ -7,7 +7,7 @@ class GameBoardLogic {
         var xDestination = parseInt(destinationSquare / 10);
         var yDestination = destinationSquare % 10;
     
-        if ((xSelected == xDestination) && (ySelected == yDestination)) {
+        if ((xSelected === xDestination) && (ySelected === yDestination)) {
         return false;
         }
     

@@ -5,7 +5,7 @@ function renderResourceList(resources) {
 }
 
 function EntityDetails(props) {
-  if (props.entity.type == 'resource') {
+  if (props.entity.type === 'resource') {
           return (
             <table>
                 <tr>
@@ -82,7 +82,7 @@ function EntityDetails(props) {
                 Resources:
             </td>
             <td>
-                {props.entity.resources.length == 0 ? 'None' : null}
+                {props.entity.resources.length === 0 ? 'None' : null}
             </td>
         </tr>
         <tr></tr>

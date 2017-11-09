@@ -3,15 +3,15 @@ import React from 'react';
 
 function Square(props) {
   var imageSource = props.content == null ? null : './images/' + props.content;
-  var SHOWIMAGES = false;
+  var SHOWIMAGES = true;
 
-  if (imageSource == null) {
+  if (imageSource === null) {
     return (
       <button className="square" onClick={props.onClick} />
     );
   }
 
-  if (SHOWIMAGES == true)
+  if (SHOWIMAGES === true)
   {
     return (
       <button className="square" > 
@@ -22,7 +22,7 @@ function Square(props) {
 
   return (
     <button className="square" > 
-      <textarea onClick={props.onClick} text={props.textDetail} alt="" />      
+      <li onClick={props.onClick} text={props.textDetail} />      
     </button>
   );
 
